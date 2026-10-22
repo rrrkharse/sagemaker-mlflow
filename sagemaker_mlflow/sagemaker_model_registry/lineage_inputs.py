@@ -43,9 +43,15 @@ def log_lineage_inputs(model_id: str, lineage_inputs: LineageInputs) -> str:
     Args:
         model_id: MLflow logged model ID (e.g. "m-abc123").
         lineage_inputs: List of declared inputs. Each entry needs a ``Type``
-            plus the identifier fields for that type -- ``Arn`` for
-            ``FeatureGroup``, ``Uri`` (and optionally ``SnapshotId``) for
-            ``S3TableSnapshot``.
+            plus the identifier for that type -- ``Arn`` for ``FeatureGroup``,
+            ``Uri`` for ``S3TableSnapshot``. Both accept an optional
+            ``SnapshotId`` pinning which state of the data was read: for a
+            feature group, the Iceberg snapshot id of its offline store.
+
+            Declare the model's DIRECT inputs -- what the training code read.
+            An ancestor of an input is not itself an input: if a feature group
+            fed the model, declare the feature group, not the dataset behind
+            it, or the graph asserts the model read data it never saw.
 
     Returns:
         The artifact URI of the uploaded artifact.
@@ -59,7 +65,8 @@ def log_lineage_inputs(model_id: str, lineage_inputs: LineageInputs) -> str:
         >>> log_lineage_inputs(
         ...     model_info.model_id,
         ...     lineage_inputs=[
-        ...         {"Type": "FeatureGroup", "Arn": "arn:aws:sagemaker:..."},
+        ...         {"Type": "FeatureGroup", "Arn": "arn:aws:sagemaker:...",
+        ...          "SnapshotId": "7281539204561098345"},
         ...         {"Type": "S3TableSnapshot", "Uri": "s3://bucket/table/"},
         ...     ],
         ... )

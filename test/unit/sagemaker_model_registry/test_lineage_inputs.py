@@ -181,3 +181,28 @@ class TestInputsValidation:
             ])
 
         mock_client.log_model_artifact.assert_not_called()
+
+    @patch("sagemaker_mlflow.sagemaker_model_registry.lineage_inputs.mlflow.MlflowClient")
+    def test_feature_group_snapshot_id_is_forwarded(self, mock_client_cls):
+        """SnapshotId pins which state of the group was read; the server resolves it."""
+        _, captured = _mock_client(mock_client_cls)
+
+        entry = {
+            "Type": "FeatureGroup",
+            "Arn": FEATURE_GROUP_ARN,
+            "SnapshotId": "7281539204561098345",
+        }
+        log_lineage_inputs("m-123", lineage_inputs=[entry])
+
+        assert captured["content"]["Inputs"] == [entry]
+
+    @patch("sagemaker_mlflow.sagemaker_model_registry.lineage_inputs.mlflow.MlflowClient")
+    def test_feature_group_snapshot_id_is_optional(self, mock_client_cls):
+        """A group without a declared snapshot stays valid -- Arn is the only requirement."""
+        _, captured = _mock_client(mock_client_cls)
+
+        entry = {"Type": "FeatureGroup", "Arn": FEATURE_GROUP_ARN}
+        log_lineage_inputs("m-123", lineage_inputs=[entry])
+
+        assert captured["content"]["Inputs"] == [entry]
+        assert "SnapshotId" not in captured["content"]["Inputs"][0]

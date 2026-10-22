@@ -22,10 +22,21 @@ class FeatureGroupInput(TypedDict, total=False):
     """A SageMaker Feature Store feature group that fed the model.
 
     Resolves server-side to the feature group's auto-created lineage Context.
+
+    ``SnapshotId`` optionally pins *which state* of the group was read: the
+    Iceberg snapshot id of its offline store table. Declaring it additionally
+    resolves a point-in-time Artifact for that snapshot, so two models trained
+    on different snapshots of one group are distinct upstream nodes under a
+    shared Context. The offline store's S3 location is resolved server-side --
+    the caller only needs the ARN and the snapshot id.
+
+    Only an offline store created with ``TableFormat=Iceberg`` has snapshots;
+    the Glue default has none, so there is nothing to pin on such a group.
     """
 
     Type: Literal["FeatureGroup"]
     Arn: str
+    SnapshotId: str
 
 
 class S3TableSnapshotInput(TypedDict, total=False):
